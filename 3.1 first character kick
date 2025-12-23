@@ -1,0 +1,392 @@
+# importing required functions
+import pygame, sys
+from pygame.locals import *
+from HomeScreen import *
+import random
+import time
+import math
+
+pygame.init()
+
+
+# screen layout constants
+width, height = (1500, 800)
+screen = pygame.display.set_mode((width, height))
+pygame.display.set_caption('Crazyball')
+BG_colour = (255, 255, 255)
+screen.fill(BG_colour)
+
+# fps constants
+FramesPerSec = pygame.time.Clock()
+FPS = 60
+
+running = True
+
+'''
+image_import = pygame.image.load("/Users/Pashwa/Desktop/Coursework/Chartest.png").convert()
+image = pygame.transform.scale(image_import, (200,200))
+image.set_colorkey((0,0,0))'''
+
+
+image_import = pygame.image.load("/Users/Pashwa/Desktop/Coursework/Mbappe_kick.png").convert()
+image_import.set_colorkey((245,245,245))
+#image = pygame.transform.scale(image_import, (150, 150))
+
+
+
+
+
+background_import = pygame.image.load("/Users/Pashwa/Desktop/Coursework/stadium 1.2.png").convert()
+background = pygame.transform.scale(background_import, (1500, 800))
+
+
+def player_kick(image_import, width, height, frame_number):
+    image = pygame.Surface((width, height)).convert_alpha()
+    image.blit(image_import, (0, 0), (frame_number*900, 0, width, height))
+
+    return image
+
+char_w, char_h = 150, 150
+frames= [
+ pygame.transform.scale(player_kick(image_import, 900, 1050, 0), (char_w,char_h)),
+ pygame.transform.scale(player_kick(image_import, 900, 1050, 1), (char_w,char_h)),
+ pygame.transform.scale(player_kick(image_import, 900, 1050, 2), (char_w,char_h)),
+ pygame.transform.scale(player_kick(image_import, 900, 1050, 3), (char_w,char_h)),
+
+]
+
+
+def controls():
+    screen.fill("black")
+
+    # font constants
+    text_font = pygame.font.SysFont('comicsans', 70)
+    text_colour = (0, 0, 0)
+
+    controls1_import = pygame.image.load("/Users/Pashwa/Desktop/Coursework/Controls - Single player.png").convert()
+    controls1_image = pygame.transform.scale(controls1_import, (400, 400))
+    screen.blit(controls1_image, (100,300))
+
+    controls1_import = pygame.image.load("/Users/Pashwa/Desktop/Coursework/Controls - Two player.png").convert()
+    controls1_image = pygame.transform.scale(controls1_import, (400, 400))
+    screen.blit(controls1_image, (900,300))
+
+    Home_text = text_font.render("Home", True, text_colour)
+    Home_rect = Home_text.get_rect(center=(200, 150))
+    HomeButton_rect = Home_rect.inflate(110, 70)
+    pygame.draw.rect(screen, (0, 0, 128), HomeButton_rect, border_radius=10)
+    screen.blit(Home_text, Home_rect)
+
+    pygame.display.update()
+
+    running =  True
+    while running:
+
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if HomeButton_rect.collidepoint(event.pos):
+                    running = False
+                    home()
+
+
+
+def characters():
+    pass
+
+
+
+def gamemode(selected):
+    # font constants
+    text_font = pygame.font.SysFont('comicsans', 70)
+    text_colour = (0, 0, 0)
+
+    screen.fill("black")
+
+    play_text = text_font.render("Play", True, text_colour)
+    play_rect = play_text.get_rect(center=(750, 250))
+    PlayButton_rect = play_rect.inflate(110, 70)
+    pygame.draw.rect(screen, (0, 0, 128), PlayButton_rect, border_radius=10)
+    screen.blit(play_text, play_rect)
+
+    SinglePlayer_text = text_font.render("Single Player", True, text_colour)
+    SinglePlayer_rect = SinglePlayer_text.get_rect(center=(750, 450))
+    SinglePlayerbutton_rect = SinglePlayer_rect.inflate(110, 70)
+    pygame.draw.rect(screen, (0, 0, 128), SinglePlayerbutton_rect, border_radius=10)
+    pygame.draw.rect(screen, (255, 255, 255), SinglePlayerbutton_rect, 5, border_radius=10)
+    screen.blit(SinglePlayer_text, SinglePlayer_rect)
+
+    TwoPlayer_text = text_font.render("Two Player", True, text_colour)
+    TwoPlayer_rect = TwoPlayer_text.get_rect(center=(750, 650))
+    TwoPlayerbutton_rect = TwoPlayer_rect.inflate(110, 70)
+    pygame.draw.rect(screen, (0, 0, 128), TwoPlayerbutton_rect, border_radius=10)
+    screen.blit(TwoPlayer_text, TwoPlayer_rect)
+
+    Controls_text = text_font.render("Controls", True, text_colour)
+    Controls_rect = Controls_text.get_rect(center=(300, 180))
+    ControlsButton_rect = Controls_rect.inflate(110, 70)
+    pygame.draw.rect(screen, (0, 0, 128), ControlsButton_rect, border_radius=10)
+    screen.blit(Controls_text, Controls_rect)
+
+    Characters_text = text_font.render("Characters", True, text_colour)
+    Characters_rect = Characters_text.get_rect(center=(1200, 180))
+    CharactersButton_rect = Characters_rect.inflate(110, 70)
+    pygame.draw.rect(screen, (0, 0, 128), CharactersButton_rect, border_radius=10)
+    screen.blit(Characters_text, Characters_rect)
+
+    if selected % 2 != 0:
+        #unselects single player and selects two player
+        pygame.draw.rect(screen, (0, 0, 128), SinglePlayerbutton_rect, border_radius=10)
+        screen.blit(SinglePlayer_text, SinglePlayer_rect)
+
+        pygame.draw.rect(screen, (0, 0, 128), TwoPlayerbutton_rect, border_radius=10)
+        pygame.draw.rect(screen, (255, 255, 255), TwoPlayerbutton_rect, 5,  border_radius=10)
+        screen.blit(TwoPlayer_text, TwoPlayer_rect)
+    else:
+        #selects single player and unselects two player
+        pygame.draw.rect(screen, (0, 0, 128), SinglePlayerbutton_rect, border_radius=10)
+        pygame.draw.rect(screen, (255, 255, 255), SinglePlayerbutton_rect, 5,  border_radius=10)
+        screen.blit(SinglePlayer_text, SinglePlayer_rect)
+
+        pygame.draw.rect(screen, (0, 0, 128), TwoPlayerbutton_rect,  border_radius=10)
+        screen.blit(TwoPlayer_text, TwoPlayer_rect)
+
+
+def home():
+    # font constants
+    text_font = pygame.font.SysFont('comicsans', 70)
+    text_colour = (0, 0, 0)
+
+    screen.fill("black")
+
+    play_text = text_font.render("Play", True, text_colour)
+    play_rect = play_text.get_rect(center=(750, 250))
+    PlayButton_rect = play_rect.inflate(110, 70)
+
+    SinglePlayer_text = text_font.render("Single Player", True, text_colour)
+    SinglePlayer_rect = SinglePlayer_text.get_rect(center=(750, 450))
+    SinglePlayerbutton_rect = SinglePlayer_rect.inflate(110, 70)
+
+
+    TwoPlayer_text = text_font.render("Two Player", True, text_colour)
+    TwoPlayer_rect = TwoPlayer_text.get_rect(center=(750, 650))
+    TwoPlayerbutton_rect = TwoPlayer_rect.inflate(110, 70)
+
+
+    Controls_text = text_font.render("Controls", True, text_colour)
+    Controls_rect = Controls_text.get_rect(center=(300, 180))
+    ControlsButton_rect = Controls_rect.inflate(110, 70)
+
+    Characters_text = text_font.render("Characters", True, text_colour)
+    Characters_rect = Characters_text.get_rect(center=(1200, 180))
+    CharactersButton_rect = Characters_rect.inflate(110, 70)
+
+
+
+    pygame.draw.rect(screen, (0, 0, 128), SinglePlayerbutton_rect, border_radius=10)
+    pygame.draw.rect(screen, (255, 255, 255), SinglePlayerbutton_rect, 5, border_radius=10)
+    screen.blit(SinglePlayer_text, SinglePlayer_rect)
+
+    pygame.draw.rect(screen, (0, 0, 128), TwoPlayerbutton_rect, border_radius=10)
+    screen.blit(TwoPlayer_text, TwoPlayer_rect)
+
+
+    running = True
+    selected = 0
+
+
+    while running:
+        pygame.display.update()
+
+        pygame.draw.rect(screen, (0, 0, 128), PlayButton_rect, border_radius=10)
+        screen.blit(play_text, play_rect)
+
+
+        pygame.draw.rect(screen, (0, 0, 128), ControlsButton_rect, border_radius=10)
+        screen.blit(Controls_text, Controls_rect)
+
+        pygame.draw.rect(screen, (0, 0, 128), CharactersButton_rect, border_radius=10)
+        screen.blit(Characters_text, Characters_rect)
+
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                    if PlayButton_rect.collidepoint(event.pos):
+                        running = False
+                        game_loop()
+                    if SinglePlayerbutton_rect.collidepoint(event.pos):
+                        selected+=1
+                        gamemode(selected)
+                    if TwoPlayerbutton_rect.collidepoint(event.pos):
+                        selected+=1
+                        gamemode(selected)
+                    if ControlsButton_rect.collidepoint(event.pos):
+                        running = False
+                        controls()
+                    if CharactersButton_rect.collidepoint(event.pos):
+                        running = False
+                        characters()
+
+
+
+
+class player_movement():
+    def __init__(self):
+
+        self.image= frames[0]
+        self.rect = self.image.get_rect(center=(200, 600))
+        self.left_key_pressed, self.right_key_pressed = False, False
+        self.velocity = 0
+        self.gravity = 0.4
+        self.jumping, self.ground = False, False
+        self.friction = -0.045
+        self.position = pygame.math.Vector2(200, 600)
+        self.velocity = pygame.math.Vector2(0, 0)
+        self.acceleration = pygame.math.Vector2(0, self.gravity)
+
+        #kick constants
+        self.kicking = False
+        self.frame_index = 0
+        self.frames = frames
+        self.last_kick = 0
+
+
+    def horizontal(self):
+        self.acceleration.x = 0
+        if self.left_key_pressed == True:
+            self.acceleration.x -= 0.85
+        elif self.right_key_pressed == True:
+            self.acceleration.x += 0.85
+        self.acceleration.x += self.velocity.x * self.friction
+        self.velocity.x += self.acceleration.x
+        self.limit_velocity(13)
+        self.position.x += self.velocity.x - (self.acceleration.x * .5)
+        self.rect.x = self.position.x
+
+
+    def vertical(self):
+        if self.velocity.y + self.acceleration.y <= 12:
+            self.velocity.y += self.acceleration.y
+        self.position.y += self.velocity.y - (self.acceleration.y * .5)
+        if self.position.y > 600:
+            self.ground = True
+            self.velocity.y = 0
+            self.position.y = 600
+        self.rect.bottom = self.position.y
+
+    def jump(self):
+        if self.ground == True:
+            self.jumping = False
+            self.velocity.y -= 12
+            self.ground = False
+
+    def limit_velocity(self, max_vel):
+        self.velocity.x = max(-max_vel, min(self.velocity.x, max_vel))
+        if abs(self.velocity.x) < .01:
+            self.velocity.x = 0
+
+
+    def first_kick(self):
+        if self.kicking != True:
+            self.kicking = True
+            self.frame_index = 0
+            self.last_kick = pygame.time.get_ticks()
+            self.image = self.frames[self.frame_index]
+
+    def is_kicking(self):
+        if self.kicking != True:
+            return
+        current_time = pygame.time.get_ticks()
+        if current_time - self.last_kick >= 80:
+            self.last_kick = current_time
+            self.frame_index += 1
+
+        if self.frame_index >= len(self.frames):
+            self.frame_index = 0
+            self.kicking = False
+            self.image = self.frames[self.frame_index]
+        else:
+            self.image = self.frames[self.frame_index]
+
+
+
+
+    def update(self):
+        self.horizontal()
+        self.vertical()
+        self.is_kicking()
+
+
+
+    def draw(self, screen):
+        screen.blit(self.image, (self.rect.x, self.rect.y))
+
+
+
+def game_loop():
+
+    clock = pygame.time.Clock()
+    image = player_movement()
+
+
+    running = True
+    while running: #main program
+        clock.tick(60)
+        screen.blit(background, (0,0))
+
+
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                running = False
+
+            if event.type == pygame.KEYDOWN:
+
+                # keybinds associated with movement up/down/left right
+                key = pygame.key.get_pressed()
+                if key[pygame.K_RIGHT]:
+                    image.right_key_pressed = True
+
+                if key[pygame.K_LEFT]:
+                    image.left_key_pressed = True
+
+                if key[pygame.K_SPACE]:
+                    image.jump()
+
+                if key[pygame.K_UP]:
+                    image.first_kick()
+
+
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_RIGHT:
+                    image.right_key_pressed = False
+                if event.key == pygame.K_LEFT:
+                    image.left_key_pressed = False
+                if event.key == pygame.K_SPACE:
+                    if image.jumping == True:
+                        image.jumping = False
+                        image.velocity.y *= -0.2
+
+        image.update()
+        image.draw(screen)
+        pygame.display.update()
+
+
+
+
+
+        # allows the user to quit the game
+    pygame.quit()
+
+
+
+
+
+
+
+home()
