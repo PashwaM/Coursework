@@ -1,0 +1,783 @@
+
+# importing required functions
+import pygame, sys
+from pygame.locals import *
+import random
+import time
+import pymunk
+import math
+import pymunk.pygame_util
+
+
+pygame.init()
+
+
+# screen layout constants
+width, height = (1500, 800)
+screen = pygame.display.set_mode((width, height))
+pygame.display.set_caption('Crazyball')
+BG_colour = (0,0,0)
+screen.fill(BG_colour)
+
+# fps constants
+FramesPerSec = pygame.time.Clock()
+FPS = 60
+
+running = True
+
+
+
+
+
+floor_collisions = 11
+wall_collisions = 12
+player1_collisions = 1
+player2_collisions = 2
+feet_collisions = 3
+ball_collisions = 4
+crossbar_collisions = 5
+
+space = pymunk.Space()
+space.gravity = (0,1300)
+
+
+def on_ground(arbiter, space, data):
+
+    if arbiter.shapes[0].collision_type == feet_collisions:
+        feet = arbiter.shapes[0]
+    else:
+        feet = arbiter.shapes[1]
+
+
+    player = feet.player
+    player.count += 1
+    player.ground = True
+    return True
+
+
+def in_air(arbiter, space, data):
+
+    if arbiter.shapes[0].collision_type == feet_collisions:
+        feet = arbiter.shapes[0]
+    else:
+        feet = arbiter.shapes[1]
+
+    player = feet.player
+    player.count -= 1
+    if player.count < 1:
+        player.count = 0
+        player.ground = False
+    return True
+
+jump_handler = space.on_collision(feet_collisions, floor_collisions, begin=on_ground, separate=in_air)
+
+
+
+#wall, ceiling, floor boundaries
+boundaries = [
+    pymunk.Segment(space.static_body, (55,0), (55, 800), 5),#left wall
+    pymunk.Segment(space.static_body, (1448,0), (1448, 800), 5),#right wall
+    pymunk.Segment(space.static_body, (0,0), (1500, 0), 5)]#ceiling
+
+for boundary in boundaries:
+    boundary.elasticity = 0.2
+    boundary.friction  = 0.6
+    boundary.collision_type = wall_collisions
+    space.add(boundary)
+
+
+#floor
+floor = pymunk.Segment(space.static_body, (0, 590), (1500, 590), 5)
+floor.elasticity = 0.7
+floor.friction = 0.5
+floor.collision_type = floor_collisions
+space.add(floor)
+
+#crossbar
+crossbar = pymunk.Segment(space.static_body, (1353, 278), (1455, 278), 7)
+crossbar.elasticity = 0.6
+crossbar.friction = 1
+crossbar.collision_type = crossbar_collisions
+space.add(crossbar)
+
+crossbar = pymunk.Segment(space.static_body, (54, 280), (136, 280), 7)
+crossbar.elasticity = 0.6
+crossbar.friction = 1
+crossbar.collision_type = crossbar_collisions
+space.add(crossbar)
+
+
+
+
+draw_options = pymunk.pygame_util.DrawOptions(screen)
+
+
+
+
+
+Ronaldo_char = pygame.image.load("/Users/Pashwa/Desktop/Coursework/Ronaldo_kick.png").convert()
+Messi_char = pygame.image.load("/Users/Pashwa/Desktop/Coursework/Messi_kick.png").convert()
+Mbappe_char = pygame.image.load("/Users/Pashwa/Desktop/Coursework/Mbappe_kick.png").convert()
+
+
+
+background_import = pygame.image.load("/Users/Pashwa/Desktop/Coursework/stadium 1.2.png").convert()
+background = pygame.transform.scale(background_import, (1500, 800))
+
+
+football_import = pygame.image.load("/Users/Pashwa/Desktop/Coursework/football.png").convert_alpha()
+football = pygame.transform.scale(football_import, (60, 60))
+
+
+def frame_selector(image_import, frame_number):
+    image = pygame.Surface((surface_width, surface_height)).convert_alpha()
+    image.blit(image_import, (0, 0), (frame_number*900, 0, surface_width, surface_height))
+
+    return image
+
+char_w, char_h = 150, 150
+surface_width, surface_height = 900, 1050
+Ronaldo_frames= [
+ pygame.transform.scale(frame_selector(Ronaldo_char,  0), (char_w, char_h)),
+ pygame.transform.scale(frame_selector(Ronaldo_char,  1), (char_w, char_h)),
+ pygame.transform.scale(frame_selector(Ronaldo_char,  2), (char_w, char_h)),
+ pygame.transform.scale(frame_selector(Ronaldo_char,  3), (char_w, char_h)),
+]
+Messi_frames= [
+ pygame.transform.scale(frame_selector(Messi_char,  0), (char_w, char_h)),
+ pygame.transform.scale(frame_selector(Messi_char,  1), (char_w, char_h)),
+ pygame.transform.scale(frame_selector(Messi_char,  2), (char_w, char_h)),
+ pygame.transform.scale(frame_selector(Messi_char,  3), (char_w, char_h)),
+]
+Mbappe_frames= [
+ pygame.transform.scale(frame_selector(Mbappe_char,  0), (char_w, char_h)),
+ pygame.transform.scale(frame_selector(Mbappe_char,  1), (char_w, char_h)),
+ pygame.transform.scale(frame_selector(Mbappe_char,  2), (char_w, char_h)),
+ pygame.transform.scale(frame_selector(Mbappe_char,  3), (char_w, char_h)),
+]
+
+# font constants
+text_font = pygame.font.SysFont('comicsans', 70)
+text_colour = (0, 0, 0)
+
+# home button constant
+Home_text = text_font.render("Home", True, text_colour)
+Home_rect = Home_text.get_rect(center=(200, 150))
+HomeButton_rect = Home_rect.inflate(110, 70)
+
+
+# home screen constants
+play_text = text_font.render("Play", True, text_colour)
+play_rect = play_text.get_rect(center=(750, 250))
+PlayButton_rect = play_rect.inflate(110, 70)
+
+Characters_text = text_font.render("Characters", True, text_colour)
+Characters_rect = Characters_text.get_rect(center=(1200, 180))
+CharactersButton_rect = Characters_rect.inflate(110, 70)
+
+Controls_text = text_font.render("Controls", True, text_colour)
+Controls_rect = Controls_text.get_rect(center=(300, 180))
+ControlsButton_rect = Controls_rect.inflate(110, 70)
+
+SinglePlayer_text = text_font.render("Single Player", True, text_colour)
+SinglePlayer_rect = SinglePlayer_text.get_rect(center=(750, 450))
+SinglePlayerButton_rect = SinglePlayer_rect.inflate(110, 70)
+
+TwoPlayer_text = text_font.render("Two Player", True, text_colour)
+TwoPlayer_rect = TwoPlayer_text.get_rect(center=(750, 650))
+TwoPlayerButton_rect = TwoPlayer_rect.inflate(110, 70)
+
+
+char_list = [None, None]
+
+
+fan1 = pygame.transform.scale(pygame.image.load("/Users/Pashwa/Desktop/Coursework/fan.png").convert_alpha(), (40,40))
+fan2 = pygame.transform.scale(pygame.image.load("/Users/Pashwa/Desktop/Coursework/fan2.png").convert_alpha(), (40,40))
+fan3 = pygame.transform.scale(pygame.image.load("/Users/Pashwa/Desktop/Coursework/fan3.png").convert_alpha(), (40,40))
+fan4 = pygame.transform.scale(pygame.image.load("/Users/Pashwa/Desktop/Coursework/fan4.png").convert_alpha(), (40,40))
+fan5 = pygame.transform.scale(pygame.image.load("/Users/Pashwa/Desktop/Coursework/fan5.png").convert_alpha(), (40,40))
+
+fan_list = [fan1, fan2, fan3, fan4, fan5]
+
+stadium_background = pygame.surface.Surface((650,110)).convert_alpha()
+stadium = stadium_background.copy()
+stadium.fill((0,0,0,0))
+
+
+fan_object_rects = []
+fan_objects = []
+class Fan:
+    def __init__(self):
+        self.fan_num = random.randint(0, 4)
+        self.image = fan_list[self.fan_num]
+        self.x = random.randint(0, 650 - self.image.get_width())
+        self.y = random.randint(0, 110 - self.image.get_height())
+        self.rect = self.image.get_rect(topleft=(self.x, self.y))
+
+
+        self.ground_pos = self.y
+        self.velocity = 0
+        self.gravity = 0.7
+        self.ground = True
+        self.position = float(self.y)
+
+
+    def vertical(self):
+        if self.velocity + self.gravity <= 12:
+            self.velocity += self.gravity
+        self.position += self.velocity - (self.gravity * .5)
+        if self.position > self.ground_pos:
+            self.ground = True
+            self.velocity = 0
+            self.position = float(self.ground_pos)
+        self.rect.y = int(self.position)
+
+
+
+    def draw(self, stadium):
+        attempts  = 5000
+        while any(self.rect.colliderect(rect) for rect in fan_object_rects) == True and attempts > 0:
+            self.x = random.randint(0, 650 - self.image.get_width())
+            self.y = random.randint(0, 110 - self.image.get_height())
+            self.rect = self.image.get_rect(topleft=(self.x, self.y))
+            attempts -= 1
+
+
+            self.ground_pos = self.y
+            self.position = float(self.y)
+
+
+        if attempts > 0:
+            stadium.blit(self.image, self.rect)
+            fan_object_rects.append(self.rect.copy())
+
+    def fan_bobbing(self):
+
+        if self.ground == True and random.random() <= 0.005:
+            test_fan = self.rect.copy()
+            test_fan.y -= 6
+            for fan in fan_objects:
+                if test_fan.colliderect(fan.rect) and test_fan is not self:
+                        return
+
+# not working still, fans spawning on top of each othe
+
+            self.velocity -= 6
+            self.ground = False
+
+
+
+# I THINK issue is occuring with ur fan object and object rect lists because of how ur updating and checking different ones in
+# different functions, try only use one function and that might fix it
+
+
+
+
+
+
+
+
+    def fan_update(self):
+        self.fan_bobbing()
+        self.vertical()
+
+
+
+
+
+
+def controls():
+    screen.fill(BG_colour)
+
+
+    single_controls_import = pygame.image.load("/Users/Pashwa/Desktop/Coursework/Controls - Single player.png").convert()
+    single_controls_image = pygame.transform.scale(single_controls_import, (400, 400))
+    screen.blit(single_controls_image, (100,300))
+
+    two_controls_import = pygame.image.load("/Users/Pashwa/Desktop/Coursework/Controls - Two player.png").convert()
+    two_controls_image = pygame.transform.scale(two_controls_import, (400, 400))
+    screen.blit(two_controls_image, (900,300))
+
+    pygame.draw.rect(screen, (0, 0, 128), HomeButton_rect, border_radius=10)
+    screen.blit(Home_text, Home_rect)
+
+    pygame.display.update()
+
+    running =  True
+    while running:
+
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if HomeButton_rect.collidepoint(event.pos):
+                    return None
+
+
+
+def characters():
+
+    Messi_text = text_font.render("Messi", True, text_colour)
+    Messi_rect = Messi_text.get_rect(center=(600, 150))
+    MessiButton_rect = Messi_rect.inflate(50, 10)
+    Messi_import = pygame.image.load("/Users/Pashwa/Desktop/Coursework/Sprites/Messi1.png").convert()
+    Messi_pic = pygame.transform.scale(Messi_import, (250, 250))
+
+    Ronaldo_text = text_font.render("Ronaldo", True, text_colour)
+    Ronaldo_rect = Ronaldo_text.get_rect(center=(925, 150))
+    RonaldoButton_rect = Ronaldo_rect.inflate(50, 10)
+    Ronaldo_import = pygame.image.load("/Users/Pashwa/Desktop/Coursework/Sprites/Ronaldo1.png").convert()
+    Ronaldo_pic = pygame.transform.scale(Ronaldo_import, (250, 250))
+
+    Mbappe_text = text_font.render("Mbappe", True, text_colour)
+    Mbappe_rect = Mbappe_text.get_rect(center=(1300, 150))
+    MbappeButton_rect = Mbappe_rect.inflate(50, 10)
+    Mbappe_import = pygame.image.load("/Users/Pashwa/Desktop/Coursework/Sprites/Mbappe1.png").convert()
+    Mbappe_pic = pygame.transform.scale(Mbappe_import, (250, 250))
+
+    running = True
+    count = 0
+    char = None
+    while running:
+        screen.fill(BG_colour)
+
+
+
+        pygame.draw.rect(screen, (0, 0, 128), HomeButton_rect, border_radius=10)
+        screen.blit(Home_text, Home_rect)
+
+        pygame.draw.rect(screen, (0, 0, 128), MessiButton_rect, border_radius=10)
+        screen.blit(Messi_text, Messi_rect)
+        screen.blit(Messi_pic, (450, 300))
+
+        pygame.draw.rect(screen, (0, 0, 128), RonaldoButton_rect, border_radius=10)
+        screen.blit(Ronaldo_text, Ronaldo_rect)
+        screen.blit(Ronaldo_pic, (800, 300))
+
+        pygame.draw.rect(screen, (0, 0, 128), MbappeButton_rect, border_radius=10)
+        screen.blit(Mbappe_text, Mbappe_rect)
+        screen.blit(Mbappe_pic, (1150, 300))
+
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if HomeButton_rect.collidepoint(event.pos) and char_list[0] != None and char_list[1] != None:
+                    return None
+                if MessiButton_rect.collidepoint(event.pos):
+                    char = player_characters(count, "Messi")
+                    count+=1
+                if RonaldoButton_rect.collidepoint(event.pos):
+                    char = player_characters(count, "Ronaldo")
+                    count+=1
+                if MbappeButton_rect.collidepoint(event.pos):
+                    char = player_characters(count, "Mbappe")
+                    count+=1
+
+                if count % 2 != 0:
+                    char_list[0] = char
+                else:
+                    char_list[1] = char
+
+        pygame.display.update()
+
+
+
+def player_characters(count,char):
+
+        screen.fill(BG_colour)
+
+        # font constants
+        text_font = pygame.font.SysFont('comicsans', 70)
+        text_colour = (255, 255, 255)
+
+        if count % 2 == 0:
+            text = text_font.render(f"Player 1 - {char}", True, text_colour)
+            screen.blit(text, (500,300))
+
+        if count % 2 == 1:
+            text = text_font.render(f"Player 2 - {char}", True, text_colour)
+            screen.blit(text, (500,300))
+
+        pygame.display.update()
+        time.sleep(1.5)
+        return char
+
+
+
+
+
+def gamemode(selected):
+
+    screen.fill(BG_colour)
+
+
+    pygame.draw.rect(screen, (0, 0, 128), PlayButton_rect, border_radius=10)
+    screen.blit(play_text, play_rect)
+
+    pygame.draw.rect(screen, (0, 0, 128), ControlsButton_rect, border_radius=10)
+    screen.blit(Controls_text, Controls_rect)
+
+    pygame.draw.rect(screen, (0, 0, 128), CharactersButton_rect, border_radius=10)
+    screen.blit(Characters_text, Characters_rect)
+
+    if selected % 2 != 0:
+        #unselects single player and selects two player
+        pygame.draw.rect(screen, (0, 0, 128), SinglePlayerButton_rect, border_radius=10)
+        screen.blit(SinglePlayer_text, SinglePlayer_rect)
+
+        pygame.draw.rect(screen, (0, 0, 128), TwoPlayerButton_rect, border_radius=10)
+        pygame.draw.rect(screen, (255, 255, 255), TwoPlayerButton_rect, 5, border_radius=10)
+        screen.blit(TwoPlayer_text, TwoPlayer_rect)
+    else:
+        #selects single player and unselects two player
+        pygame.draw.rect(screen, (0, 0, 128), SinglePlayerButton_rect, border_radius=10)
+        pygame.draw.rect(screen, (255, 255, 255), SinglePlayerButton_rect, 5, border_radius=10)
+        screen.blit(SinglePlayer_text, SinglePlayer_rect)
+
+        pygame.draw.rect(screen, (0, 0, 128), TwoPlayerButton_rect, border_radius=10)
+        screen.blit(TwoPlayer_text, TwoPlayer_rect)
+
+
+def home():
+
+    selected = 0
+
+    running = True
+    while running:
+        gamemode(selected)
+        pygame.display.update()
+
+
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                    if PlayButton_rect.collidepoint(event.pos) and char_list[0] != None and char_list[1] != None :
+                        game_loop()
+                    if SinglePlayerButton_rect.collidepoint(event.pos):
+                        selected+=1
+                        gamemode(selected)
+                    if TwoPlayerButton_rect.collidepoint(event.pos):
+                        selected+=1
+                        gamemode(selected)
+                    if ControlsButton_rect.collidepoint(event.pos):
+                        controls()
+                    if CharactersButton_rect.collidepoint(event.pos):
+                        characters()
+
+
+
+
+class Player_movement:
+    def __init__(self, player, player_num):
+
+        if player == "Ronaldo":
+            self.image= Ronaldo_frames[0]
+            self.frames = Ronaldo_frames.copy()
+        if player == "Messi":
+            self.image= Messi_frames[0]
+            self.frames = Messi_frames.copy()
+        if player == "Mbappe":
+            self.image= Mbappe_frames[0]
+            self.frames = Mbappe_frames.copy()
+
+        if player_num == 1:
+            start_x, start_y = 1200, 545
+        if player_num == 2:
+            start_x, start_y = 300, 545
+            for index in range(len(self.frames)):
+                self.frames[index] = pygame.transform.flip(self.frames[index], 1, 0)
+            self.image = self.frames[0]
+
+        self.rect = self.image.get_rect(center=(start_x, start_y))
+        self.left_key, self.right_key = False, False
+        self.velocity = pygame.math.Vector2(0,0)
+        self.acceleration = pygame.math.Vector2(0,0)
+        self.friction = -0.045
+
+#pymunk stuff
+        self.mass = 10
+        radius = 50
+        moment = pymunk.moment_for_circle(self.mass, 0, radius)
+
+        self.body = pymunk.Body(self.mass, moment, body_type=pymunk.Body.DYNAMIC )
+        self.body.position = (start_x, start_y)
+        self.body.damping = 0.99
+        self.body.moment = float("inf")
+        if player_num == 1:
+            self.shape = pymunk.Circle(self.body, radius, offset=(23, radius - 70))
+            self.shape.collision_type = player1_collisions
+            self.direction_foot = -1
+        else:
+            self.shape = pymunk.Circle(self.body, radius, offset=(-23, radius - 70))
+            self.shape.collision_type = player2_collisions
+            self.direction_foot = 1
+        self.shape.friction = 0.05
+        self.shape.elasticity = 0.2
+        space.add(self.body, self.shape)
+
+#feet constants
+        self.ground = False
+        self.count = 0
+        self.feet = pymunk.Circle(self.body, 12, offset=(0,radius) )
+        self.feet.sensor = True
+        self.feet.collision_type = feet_collisions
+        self.feet.player = self
+        space.add(self.feet)
+
+
+
+        #kick constants
+        self.kicking = False
+        self.frame_index = 0
+        self.last_kick = 0
+        self.kick_used = False
+
+
+    def horizontal(self):
+        self.velocity.x = self.body.velocity.x / FPS
+
+        self.acceleration.x = 0
+        if self.left_key == True:
+            self.acceleration.x -= 0.85
+        elif self.right_key == True:
+            self.acceleration.x += 0.85
+        self.acceleration.x += self.velocity.x * self.friction
+        self.velocity.x += self.acceleration.x
+        self.limit_velocity(13)
+        self.body.velocity = (self.velocity.x * FPS, self.body.velocity.y)
+        self.rect.center = (int(self.body.position.x), int(self.body.position.y))
+        self.body.angular_velocity = 0
+        self.body.angle = 0
+
+
+    def jump(self):
+        if self.count > 0:
+            self.body.apply_impulse_at_local_point((0,-(self.mass*12*FPS)))
+            self.ground = False
+            self.count = 0
+
+
+    def limit_velocity(self, max_vel):
+        self.velocity.x = max(-max_vel, min(self.velocity.x, max_vel))
+        if abs(self.velocity.x) < 0.05:
+            self.velocity.x = 0
+
+    def kicking_ball(self, ball, type_of_kick):
+        foot_position_x = self.body.position.x + self.direction_foot * 30
+        foot_position_y = self.body.position.y + 10
+
+
+        distance_x =  ball.body.position.x - foot_position_x
+        distance_y = (ball.body.position.y - foot_position_y) *-1
+
+        if distance_x**2 + distance_y**2 <= 70**2 and (distance_x * self.direction_foot)>0 and self.kicking == True and self.kick_used == False:
+
+            angle = math.degrees(math.atan2(distance_y, abs(distance_x)))
+            if type_of_kick == "high_kick":
+                angle += 20
+
+            if angle > 60:
+                angle = 60
+            elif angle < 1:
+                angle = 1
+
+            power = 2000
+            angle_radians = math.radians(angle)
+
+            impulse_x = math.cos(angle_radians) * power * self.direction_foot
+            impulse_y = -math.sin(angle_radians) * power
+            ball.body.apply_impulse_at_world_point((impulse_x, impulse_y), ball.body.position)
+
+
+            max_ball_speed = 1000
+            ball_velocity_x, ball_velocity_y = ball.body.velocity
+            speed = (ball_velocity_x**2 + ball_velocity_y**2) ** 0.5  # magnitude
+            if speed > max_ball_speed:
+                velocity_scale = max_ball_speed / speed
+                ball.body.velocity = (ball_velocity_x * velocity_scale, ball_velocity_y * velocity_scale)
+
+
+            self.kick_used = True
+
+    def first_kick(self):
+        if self.kicking != True:
+            self.kicking = True
+            self.frame_index = 0
+            self.last_kick = pygame.time.get_ticks()
+            self.image = self.frames[self.frame_index]
+            self.kick_used = False
+
+    def is_kicking(self):
+        if self.kicking != True:
+            return
+        current_time = pygame.time.get_ticks()
+        if current_time - self.last_kick >= 60:
+            self.last_kick = current_time
+            self.frame_index += 1
+
+        if self.frame_index >= len(self.frames):
+            self.frame_index = 0
+            self.kicking = False
+            self.image = self.frames[self.frame_index]
+        else:
+            self.image = self.frames[self.frame_index]
+
+
+
+
+
+
+    def update(self):
+        self.horizontal()
+        self.is_kicking()
+
+
+    def draw(self, screen):
+        screen.blit(self.image, (self.rect.x, self.rect.y))
+
+
+class Ball:
+    def __init__(self):
+
+        self.image = football
+        self.base_image = self.image
+        self.rect = self.image.get_rect(center=(30,30))
+
+
+        self.mass = 1.5
+        self.radius = 30
+        moment = pymunk.moment_for_circle(self.mass, 0, self.radius)
+
+        self.body = pymunk.Body(self.mass, moment, body_type=pymunk.Body.DYNAMIC )
+        self.body.position = (700, 530)
+        self.body.damping = 1
+
+        self.shape = pymunk.Circle(self.body, self.radius)
+        self.shape.friction = 0.5
+        self.shape.elasticity = 0.95
+        self.shape.collision_type = ball_collisions
+
+        space.add(self.body, self.shape)
+
+
+    def draw(self, screen):
+
+        # Pymunk angle is radians; pygame rotation uses degrees and opposite sign
+        degrees = -math.degrees(self.body.angle)
+        # Rotate from the ORIGINAL each time (avoids blur
+        self.image = pygame.transform.rotate(self.base_image, degrees)
+
+        self.rect = self.image.get_rect(center=(int(self.body.position.x), int(self.body.position.y)))
+
+        screen.blit(self.image, self.rect)
+
+
+
+
+def game_loop():
+
+    #instantiating objects
+    player1 = Player_movement(char_list[0], 1)
+    player2 = Player_movement(char_list[1], 2)
+    for i in range(40):
+        fan_objects.append(Fan())
+        fan_objects[i].draw(stadium)
+    ball = Ball()
+
+
+
+    running = True
+    while running: #main program
+        FramesPerSec.tick(FPS)
+        screen.blit(background, (0,0))
+
+
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                running = False
+
+            if event.type == pygame.KEYDOWN:
+
+                # keybinds player 1
+                key = pygame.key.get_pressed()
+                if key[pygame.K_RIGHT]:
+                    player1.right_key = True
+                if key[pygame.K_LEFT]:
+                    player1.left_key = True
+                if key[pygame.K_UP]:
+                    player1.first_kick()
+                    player1.kicking_ball(ball, "high_kick")
+                if key[pygame.K_DOWN]:
+                    player1.first_kick()
+                    player1.kicking_ball(ball, "low_kick")
+                if event.key == pygame.K_SPACE:
+                    player1.jump()
+
+                #keybinds player 2
+                key = pygame.key.get_pressed()
+                if key[pygame.K_d]:
+                    player2.right_key = True
+                if key[pygame.K_a]:
+                    player2.left_key = True
+                if key[pygame.K_w]:
+                    player2.first_kick()
+                    player2.kicking_ball(ball, "high_kick")
+                if key[pygame.K_s]:
+                    player2.first_kick()
+                    player2.kicking_ball(ball, "low_kick")
+                if event.key == pygame.K_1:
+                    player2.jump()
+
+
+
+            if event.type == pygame.KEYUP:
+
+
+                if event.key == pygame.K_RIGHT:
+                    player1.right_key = False
+                if event.key == pygame.K_LEFT:
+                    player1.left_key = False
+                if event.key == pygame.K_d:
+                    player2.right_key = False
+                if event.key == pygame.K_a:
+                    player2.left_key = False
+
+
+        stadium.fill((0,0,0,0))
+        for fan in fan_objects:
+            fan.fan_update()
+            stadium.blit(fan.image, fan.rect)
+        screen.blit(stadium, (420,290))
+        player1.update()
+        player1.draw(screen)
+        player2.update()
+        player2.draw(screen)
+        ball.draw(screen)
+        space.step(1/FPS)
+        #space.debug_draw(draw_options)
+        pygame.display.update()
+
+        print(pygame.mouse.get_pos())
+
+
+
+
+
+
+        # allows the user to quit the game
+    pygame.quit()
+
+
+
+
+
+
+home()
