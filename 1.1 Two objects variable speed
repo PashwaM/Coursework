@@ -1,0 +1,109 @@
+#importing required functions
+import pygame, sys
+from pygame.locals import *
+import random
+import time
+pygame.init()
+
+
+# Quit Pygame
+pygame.quit()
+
+
+#screen layout constants
+width, height = (1280,640)
+screen = pygame.display.set_mode((width,height))
+pygame.display.set_caption('Crazyball')
+BG_colour = (255,255,255)
+screen.fill(BG_colour)
+
+#fps constants
+FramesPerSec = pygame.time.Clock()
+FPS = 60
+
+running = True
+
+
+image_import = pygame.image.load("C:\\Users\\pashw\\OneDrive\\Pictures\\test_image.png").convert()
+test_image = pygame.transform.scale(image_import, (100,100))
+
+test_rect = pygame.Rect(400,300,100,100)
+
+
+
+x  = 100
+y = 100
+acceleration = 0.01
+speed = 0
+max_speed = 2.5
+
+
+while running:  # main program
+    screen.fill(BG_colour)
+    pygame.draw.rect(screen, BG_colour, test_rect)
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            running  = False
+            
+
+
+#Keybinds associated with movement up/down/left/right
+    pygame.draw.rect(screen,(0,0,0), test_rect )
+    key = pygame.key.get_pressed()
+    if key[pygame.K_d] and test_rect.x < 1280-100-5:
+        test_rect.move_ip(5,0)
+    if key[pygame.K_a] and test_rect.x > 5:
+        test_rect.move_ip(-5,0)
+    if key[pygame.K_w] and test_rect.y > 5:
+        test_rect.move_ip(0,-5)
+    if key[pygame.K_s] and test_rect.y < 640-100-5:
+        test_rect.move_ip(0,5)
+
+
+
+#          IMAGE
+
+#keybinds associated with movement up/down/left right
+    screen.blit(test_image, (x, y))
+    key = pygame.key.get_pressed()
+    if key[pygame.K_RIGHT] and x < 1280-100-speed:
+        if speed < 0:
+            speed = 0
+        x+=speed
+        speed += acceleration
+    if key[pygame.K_LEFT] and x > speed:
+        if speed > 0:
+            speed = 0
+        x+=speed
+        speed -= acceleration
+    if key[pygame.K_UP] and y > speed:
+        if speed > 0:
+            speed = 0
+        y+=speed
+        speed -= acceleration
+    if key[pygame.K_DOWN] and y < 640-100-speed:
+        if speed < 0:
+            speed = 0
+        y+=speed
+        speed += acceleration
+
+    if abs(speed) > max_speed:
+        speed = max_speed
+
+
+
+
+
+
+    pygame.display.update()
+
+    # allows the user to quit the game
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            running = False
+
+
+
+pygame.quit()
+
+
